@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>คำนวณค่าสายตาใกล้</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap');
@@ -10,11 +11,21 @@
       font-family: 'Prompt', sans-serif;
       background: linear-gradient(135deg, #e0f7fa, #fce4ec);
       padding: 2rem;
-      max-width: 600px;
       margin: auto;
       border-radius: 1rem;
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      max-width: 600px;
     }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem;
+        border-radius: 0;
+        box-shadow: none;
+        max-width: 100%;
+      }
+    }
+
     h1 {
       text-align: center;
       color: #00695c;
@@ -24,6 +35,7 @@
       margin-top: 1.5rem;
       font-weight: 600;
       color: #333;
+      display: block;
     }
     input[type="number"], select {
       width: 100%;
@@ -31,6 +43,7 @@
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 0.5rem;
+      box-sizing: border-box;
     }
     button {
       margin-top: 2rem;
@@ -147,7 +160,6 @@
       const resultDiv = document.getElementById('compensationResult');
 
       if (!isNaN(sph) && !isNaN(cyl) && !isNaN(reduceCyl)) {
-        // Transpose: เอียงลดลง → เพิ่ม SPH ครึ่งหนึ่งของส่วนที่ตัด CYL
         const cylDiff = cyl - reduceCyl;
         const adjustedSph = roundToNearestQuarter(sph + cylDiff / 2);
         const adjustedCyl = roundToNearestQuarter(reduceCyl);
