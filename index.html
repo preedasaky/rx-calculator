@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>คำนวณค่าสายตาใกล้</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap');
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #fce4ec);
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 1rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #00695c;
+      font-size: 1.8rem;
+    }
+    label {
+      margin-top: 1.5rem;
+      font-weight: 600;
+      color: #333;
+    }
+    input[type="number"], select {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+    }
+    button {
+      margin-top: 2rem;
+      padding: 0.75rem;
+      width: 100%;
+      font-size: 1.1rem;
+      background-color: #00bfa5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #008e76;
+    }
+    .result {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #e8f5e9;
+      border-left: 5px solid #43a047;
+      font-size: 1.2rem;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>คำนวณค่าสายตาสำหรับแว่น</h1>
+
+  <label for="purpose">เลือกวัตถุประสงค์ในการใช้แว่น</label>
+  <select id="purpose">
+    <option value="distance">มองไกล (ขับรถ เดิน)</option>
+    <option value="computer">ทำงาน (หน้าคอม / ระยะกลาง)</option>
+    <option value="near">มองใกล้ (อ่านหนังสือ)</option>
+  </select>
+
+  <label for="sph">SPH (ค่าสายตาเดิม)</label>
+  <input type="number" id="sph" step="0.25" placeholder="เช่น -1.50">
+
+  <label for="cyl">CYL (สายตาเอียง)</label>
+  <input type="number" id="cyl" step="0.25" placeholder="เช่น -0.75">
+
+  <label for="axis">AXIS (องศา)</label>
+  <input type="number" id="axis" min="0" max="180" step="1" placeholder="เช่น 90">
+
+  <label for="add">ADD (ค่ามองใกล้)</label>
+  <input type="number" id="add" step="0.25" placeholder="เช่น +2.00">
+
+  <button onclick="calculateRx()">คำนวณค่าสายตา</button>
+
+  <hr>
+
+  <h2>กรณีต้องการลดหรือชดเชยค่าสายตาเอียง</h2>
+  <label for="reduceCyl">ต้องการลด CYL เหลือเท่าไร</label>
+  <input type="number" id="reduceCyl" step="0.25" placeholder="เช่น -1.00 หรือ 0">
+  <button onclick="compensateAstigmatism()">คำนวณชดเชยค่าสายตาเอียง</button>
+
+  <div class="result" id="result" style="display: none;"></div>
+  <div class="result" id="compensationResult" style="display: none;"></div>
+
+  <script>
+    function roundToNearestQuarter(value) {
+      return Math.round(value * 4) / 4;
+    }
+
+    function calculateRx() {
+      const purpose = document.getElementById('purpose').value;
+      const sph = parseFloat(document.getElementById('sph').value);
+      const cyl = parseFloat(document.getElementById('cyl').value);
+      const axis = parseInt(document.getElementById('axis').value);
+      const add = parseFloat(document.getElementById('add').value);
+      const resultDiv = document.getElementById('result');
+
+      let resultHTML = `<strong>ผลลัพธ์:</strong><br>`;
+      let valid = false;
+
+      let finalSph = sph;
+      if (!isNaN(sph)) {
+        if (purpose === 'near' && !isNaN(add)) {
+          finalSph = roundToNearestQuarter(sph + add);
+        } else if (purpose === 'computer' && !isNaN(add)) {
+          finalSph = roundToNearestQuarter(sph + add / 2);
+        } else {
+          finalSph = roundToNearestQuarter(sph);
+        }
+        resultHTML += `SPH: <strong>${finalSph.toFixed(2)}</strong><br>`;
+        valid = true;
+      }
+
+      if (!isNaN(cyl)) {
+        const finalCyl = roundToNearestQuarter(cyl);
+        resultHTML += `CYL: <strong>${finalCyl.toFixed(2)}</strong><br>`;
+        valid = true;
+      }
+
+      if (!isNaN(axis)) {
+        resultHTML += `AXIS: <strong>${axis}</strong><br>`;
+        valid = true;
+      }
+
+      if (valid) {
+        resultDiv.innerHTML = resultHTML;
+        resultDiv.style.display = 'block';
+      } else {
+        resultDiv.innerHTML = 'กรุณากรอกอย่างน้อย SPH';
+        resultDiv.style.display = 'block';
+      }
+    }
+
+    function compensateAstigmatism() {
+      const sph = parseFloat(document.getElementById('sph').value);
+      const cyl = parseFloat(document.getElementById('cyl').value);
+      const reduceCyl = parseFloat(document.getElementById('reduceCyl').value);
+      const resultDiv = document.getElementById('compensationResult');
+
+      if (!isNaN(sph) && !isNaN(cyl) && !isNaN(reduceCyl)) {
+        // Transpose: เอียงลดลง → เพิ่ม SPH ครึ่งหนึ่งของส่วนที่ตัด CYL
+        const cylDiff = cyl - reduceCyl;
+        const adjustedSph = roundToNearestQuarter(sph + cylDiff / 2);
+        const adjustedCyl = roundToNearestQuarter(reduceCyl);
+
+        resultDiv.innerHTML = `ชดเชยแล้ว:<br>
+          SPH: <strong>${adjustedSph.toFixed(2)}</strong><br>
+          CYL: <strong>${adjustedCyl.toFixed(2)}</strong>`;
+        resultDiv.style.display = 'block';
+      } else {
+        resultDiv.innerHTML = 'กรุณากรอกค่า SPH, CYL และค่า CYL ที่ต้องการลด';
+        resultDiv.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
